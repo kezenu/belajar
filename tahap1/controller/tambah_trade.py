@@ -1,12 +1,15 @@
 from utils.validasi import buy_sell_validator
 from utils.validasi import Validator_SLTP
+import json
+
+
 def tambah(trade):
     tanggal = input("Masukan Tanggal (Contoh: 17-08-1945): ")
     pair = input("Pair (Misal: GBPUSD): ")
     posisi = buy_sell_validator("Posisi (1 = buy, 2 = sell):(1/2) : ")
     lot = float(input("Lot (Misal: 0.5): "))
     entry = float(input("Harga Entry: "))
-    validasi_sltp = Validator_SLTP(entry, posisi, promt="Masukan SL : ")
+    validasi_sltp = Validator_SLTP(entry, posisi,"Masukan SL : ")
     sl = validasi_sltp.validator_sl()
     tp = float(input("Harga TP: "))
     hasil = float(input("Profit/Loss (USD): "))
@@ -23,5 +26,5 @@ def tambah(trade):
         "hasil": hasil,
         "catatan": catatan
     }
-    trade.append(trade_baru)
+    data_baru = trade.append(trade_baru)
     print("✅ Trade berhasil ditambahkan!")
