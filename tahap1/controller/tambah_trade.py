@@ -1,7 +1,8 @@
+from utils.validasi import buy_sell_validator as buse
 def tambah(trade):
     tanggal = input("Masukan Tanggal (Contoh: 17-08-1945): ")
     pair = input("Pair (Misal: GBPUSD): ")
-    posisi = input("Posisi (Buy/Sell): ")
+    posisi = buse("Posisi (1 = buy, 2 = sell):(1/2) : ")
     lot = float(input("Lot (Misal: 0.5): "))
     entry = float(input("Harga Entry: "))
     sl = float(input("Harga SL: "))
