@@ -1,11 +1,24 @@
-{
-  "tanggal": "231231",
-  "pair": "fwqefwe",
-  "posisi": "Buy",
-  "lot": 1.0,
-  "entry": 3.0,
-  "SL": 2.0,
-  "TP": 4.0,
-  "hasil": 34.0,
-  "catatan": "grgew"
-}
+[
+  {
+    "tanggal": "232",
+    "pair": "fewfwf",
+    "posisi": "Sell",
+    "lot": 4.0,
+    "entry": 5.0,
+    "SL": 6.0,
+    "TP": 4.0,
+    "hasil": 6.0,
+    "catatan": "twetwt"
+  },
+  {
+    "tanggal": "2324",
+    "pair": "fwefwqf",
+    "posisi": "Buy",
+    "lot": 9.0,
+    "entry": 3.0,
+    "SL": 1.0,
+    "TP": 4.0,
+    "hasil": 532.0,
+    "catatan": "egfqweg"
+  }
+]

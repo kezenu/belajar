@@ -1,10 +1,10 @@
 from utils.validasi import buy_sell_validator
 from utils.validasi import Validator_SLTP
-from utils.database import buat
+from utils.database import buat, lihat
 
 
 def tambah():
-    
+    db = lihat()
     tanggal = input("Masukan Tanggal (Contoh: 17-08-1945): ")
     pair = input("Pair (Misal: GBPUSD): ")
     posisi = buy_sell_validator("Posisi (1 = buy, 2 = sell):(1/2) : ")
@@ -27,5 +27,6 @@ def tambah():
         "hasil": hasil,
         "catatan": catatan
     }
-    buat(trade_baru)
+    db.append(trade_baru)
+    buat(db)
     print("✅ Trade berhasil ditambahkan!")
