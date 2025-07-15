@@ -1,6 +1,5 @@
 from controller.tambah_trade import tambah
 from controller.riwayat_trade import riwayat
-from data.data import data
 from utils.validasi import menu_validator
 
 while True:
@@ -14,9 +13,9 @@ while True:
         break
 
     elif pilihan == 1:
-       tambah(data)
+       tambah()
 
     elif pilihan == 2:
-        riwayat(data)
+        riwayat()
     else:
         print("pilihan tidak valid")

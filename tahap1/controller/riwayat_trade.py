@@ -1,4 +1,7 @@
-def riwayat(trade):
+from utils.database import lihat
+
+def riwayat():
+    trade = lihat()
     if not trade:
         print("❗ Belum ada riwayat trade.")
     else:
