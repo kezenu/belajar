@@ -25,23 +25,22 @@ def buy_sell_validator(prompt):
             print(f"{a} : {e}")
 
 class Validator_SLTP:
-    def __init__(self, entry, posisi, prompt):
+    def __init__(self, entry, posisi):
         self.entry = entry
         self.posisi = posisi
-        self.prompt = prompt
     
-    def validator_sltp(self):
+    def validator_sltp(self, prompt_sl):
         while True:
             try:
-                sltp = float(input(self.prompt))
+                sltp = float(input(prompt_sl))
                 return sltp
             except ValueError as e:
                 print(f"{a} : {e}")
     
-    def validator_sl(self):
+    def validator_sl(self, prompt_tp):
         while True:
             try:
-                sl = float(input(self.prompt))
+                sl = float(input(prompt_tp))
                 if self.posisi == "Buy":
                     if sl < self.entry:
                         return sl
@@ -52,5 +51,22 @@ class Validator_SLTP:
                         return sl
                     else:
                         print("❗ Saat Sell, SL harus di atas entry")
+            except ValueError as e:
+                print(f"{a} : {e}")
+
+    def validator_tp(self):
+        while True:
+            try:
+                tp = float(input(self.prompt))
+                if self.posisi == "Buy":
+                    if tp > self.entry:
+                        return tp
+                    else:
+                        print("❗ Saat Buy, TP harus di atas entry")
+                if self.posisi == "Sell":
+                    if tp < self.entry:
+                        return tp
+                    else:
+                        print("❗ Saat Sell, TP harus di bawah entry")
             except ValueError as e:
                 print(f"{a} : {e}")

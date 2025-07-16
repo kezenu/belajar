@@ -1,4 +1,4 @@
-from controller.tambah_trade import tambah
+from controller.tambah_trade import Trade
 from controller.riwayat_trade import riwayat
 from utils.validasi import menu_validator
 
@@ -11,10 +11,9 @@ while True:
     
     if pilihan == 0:
         break
-
     elif pilihan == 1:
-       tambah()
-
+       trade = Trade()
+       trade.save_json()
     elif pilihan == 2:
         riwayat()
     else:
