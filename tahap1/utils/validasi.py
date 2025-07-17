@@ -28,7 +28,7 @@ class Validator_SLTP:
     def __init__(self, entry, posisi):
         self.entry = entry
         self.posisi = posisi
-    
+
     def validator_sltp(self, prompt_sl):
         while True:
             try:
@@ -36,11 +36,11 @@ class Validator_SLTP:
                 return sltp
             except ValueError as e:
                 print(f"{a} : {e}")
-    
-    def validator_sl(self, prompt_tp):
+
+    def validator_sl(self, prompt_sl):
         while True:
             try:
-                sl = float(input(prompt_tp))
+                sl = float(input(prompt_sl))
                 if self.posisi == "Buy":
                     if sl < self.entry:
                         return sl
@@ -54,10 +54,10 @@ class Validator_SLTP:
             except ValueError as e:
                 print(f"{a} : {e}")
 
-    def validator_tp(self):
+    def validator_tp(self, prompt_tp):
         while True:
             try:
-                tp = float(input(self.prompt))
+                tp = float(input(prompt_tp))
                 if self.posisi == "Buy":
                     if tp > self.entry:
                         return tp

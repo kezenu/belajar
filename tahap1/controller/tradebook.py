@@ -17,3 +17,8 @@ def riwayat():
             print(f"TP      : {item['TP']}")
             print(f"Hasil   : {item['hasil']} USD")
             print(f"Catatan : {item['catatan']}")
+
+class Tradebook:
+    def __init__(self):
+        self.trade = lihat()
+        

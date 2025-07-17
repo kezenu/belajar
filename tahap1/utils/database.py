@@ -15,7 +15,7 @@ def lihat():
                 return []
         except json.JSONDecodeError:
             return []
-        
+
 
 def buat(data):
     with open(PATH, "w") as f:

@@ -1,5 +1,5 @@
-from controller.tambah_trade import Trade
-from controller.riwayat_trade import riwayat
+from tahap1.controller.trade import Trade
+from tahap1.controller.tradebook import riwayat
 from utils.validasi import menu_validator
 
 while True:

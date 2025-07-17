@@ -20,5 +20,16 @@
     "TP": 4.0,
     "hasil": 532.0,
     "catatan": "egfqweg"
+  },
+  {
+    "tanggal": "12-02-1990",
+    "pair": "gbpusd",
+    "posisi": "Buy",
+    "lot": 5.0,
+    "entry": 5.0,
+    "SL": 4.0,
+    "TP": 7.0,
+    "hasil": 5.0,
+    "catatan": "breakout"
   }
 ]
