@@ -31,5 +31,27 @@
     "TP": 7.0,
     "hasil": 5.0,
     "catatan": "breakout"
+  },
+  {
+    "tanggal": "23",
+    "pair": "fewfw",
+    "posisi": "Buy",
+    "lot": 5.0,
+    "entry": 5.0,
+    "SL": 4.0,
+    "TP": 6.0,
+    "hasil": 45.0,
+    "catatan": "gergew"
+  },
+  {
+    "tanggal": "2131",
+    "pair": "fwefwq",
+    "posisi": "Buy",
+    "lot": 5.0,
+    "entry": 5.0,
+    "SL": 4.0,
+    "TP": 6.0,
+    "hasil": 45.0,
+    "catatan": "hghrehahh"
   }
 ]

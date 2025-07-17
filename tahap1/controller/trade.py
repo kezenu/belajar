@@ -30,6 +30,23 @@ class Trade:
         }
     
     def save_json(self):
-        self.db.append(self.to_dict())
-        buat(self.db)
-        print("✅ Trade berhasil ditambahkan!")
+        data = self.to_dict()
+        print(f"Tanggal : {data['tanggal']}")
+        print(f"Pair    : {data['pair']}")
+        print(f"Posisi  : {data['posisi']}")
+        print(f"Lot     : {data['lot']}")
+        print(f"Entry   : {data['entry']}")
+        print(f"SL      : {data['SL']}")
+        print(f"TP      : {data['TP']}")
+        print(f"Hasil   : {data['hasil']} USD")
+        print(f"Catatan : {data['catatan']}")
+        try:
+            pilihan = input("Apakah anda yakin (y/n) : ")
+            if pilihan == "y":
+                self.db.append(data)
+                buat(self.db)
+                print("✅ Trade berhasil ditambahkan!")
+            else:
+                pass
+        except ValueError as e:
+            print(f"Input tidak valid {e}")

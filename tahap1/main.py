@@ -1,6 +1,8 @@
-from tahap1.controller.trade import Trade
-from tahap1.controller.tradebook import riwayat
+from controller.trade import Trade
+from controller.tradebook import Tradebook
 from utils.validasi import menu_validator
+
+
 
 while True:
     print("\n=== CATATAN TRADING ===")
@@ -12,9 +14,10 @@ while True:
     if pilihan == 0:
         break
     elif pilihan == 1:
-       trade = Trade()
-       trade.save_json()
+        trade = Trade()
+        trade.save_json()
     elif pilihan == 2:
-        riwayat()
+        tradebook = Tradebook()
+        tradebook.lihat()
     else:
         print("pilihan tidak valid")
