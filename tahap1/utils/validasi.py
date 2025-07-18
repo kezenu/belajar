@@ -1,17 +1,21 @@
 from datetime import datetime
+
+# variabel a untuk kata yang berulang
 a = "Input tidak valid"
 
+# fungsi untuk validasi pada bagian menu agar tidak error saat user input diluar pilihan
 def menu_validator(prompt):
     while True:
         try:
             pilihan = int(input(prompt))
-            if 0 <= pilihan <= 2:
+            if 0 <= pilihan <= 4:
                 return pilihan
             else:
                 print("❗ Pilihan tidak tersedia.")
         except ValueError as e:
             print(f"{a} : {e}")
 
+# fungsi untuk validasi masukan user pada buy sell, agar masukan hanya buy atau sell saja
 def buy_sell_validator(prompt):
     while True:
         try:
@@ -25,10 +29,11 @@ def buy_sell_validator(prompt):
         except ValueError as e:
             print(f"{a} : {e}")
 
-def validasi_tanggal(promt):
+# validasi tanggal, untuk memastikan user memasukan tanggal sesuai dengan format standar, agar nanti mudah dikelola
+def validasi_tanggal(prompt):
     while True:
         try:
-            tanggal = input(promt)
+            tanggal = input(prompt)
             format_tanggal = "%d-%m-%Y"
             objek_tanggal = datetime.strptime(tanggal, format_tanggal)
             hanya_tanggal = objek_tanggal.date()
@@ -36,6 +41,7 @@ def validasi_tanggal(promt):
         except Exception as e:
             print(f"{a} : {e}")
 
+# class atau fungsi agar user memasukan angka yang benar, contoh : saat buy tidak mungkin sl diatas harga entry, dan validasi agar memasukan angka 
 class Validator_SLTP:
     def __init__(self, entry, posisi):
         self.entry = entry

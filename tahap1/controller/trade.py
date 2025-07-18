@@ -3,6 +3,7 @@ from utils.validasi import Validator_SLTP
 from utils.database import buat, lihat
 
 class Trade:
+    # fungsi inisialisasi untuk input trade
     def __init__(self):
         self.db = lihat()
         self.tanggal = validasi_tanggal("Masukan Tanggal (Contoh: 17-08-1945): ")
@@ -16,6 +17,7 @@ class Trade:
         self.hasil = float(input("Profit/Loss (USD): "))
         self.catatan = input("Catatan (opsional): ")
 
+    # memastikan masukan user berbentuk dict
     def to_dict(self):
         return {
             "tanggal": self.tanggal,
@@ -29,6 +31,7 @@ class Trade:
             "catatan": self.catatan
         }
     
+    # tampilan ringkasan saat user mendapat konfirmasi, disa digunakan berulang
     def tampilan_ringkasan(self):
         data = self.to_dict()
         print(f"Tanggal : {data['tanggal']}")
@@ -41,8 +44,9 @@ class Trade:
         print(f"Hasil   : {data['hasil']} USD")
         print(f"Catatan : {data['catatan']}")
 
+    # menyimpan data ke database saat user telah konfirmasi
     def save_json(self):
-        print(self.tampilan_ringkasan())
+        self.tampilan_ringkasan()
         while True:
             try:
                 pilihan = input("Apakah anda yakin (y/n) : ")
