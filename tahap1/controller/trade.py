@@ -1,11 +1,11 @@
-from utils.validasi import buy_sell_validator
+from utils.validasi import buy_sell_validator, validasi_tanggal
 from utils.validasi import Validator_SLTP
 from utils.database import buat, lihat
 
 class Trade:
     def __init__(self):
         self.db = lihat()
-        self.tanggal = input("Masukan Tanggal (Contoh: 17-08-1945): ")
+        self.tanggal = validasi_tanggal("Masukan Tanggal (Contoh: 17-08-1945): ")
         self.pair = input("Pair (Misal: GBPUSD): ")
         self.posisi = buy_sell_validator("Posisi (1 = buy, 2 = sell):(1/2) : ")
         self.lot = float(input("Lot (Misal: 0.5): "))
@@ -29,7 +29,7 @@ class Trade:
             "catatan": self.catatan
         }
     
-    def save_json(self):
+    def tampilan_ringkasan(self):
         data = self.to_dict()
         print(f"Tanggal : {data['tanggal']}")
         print(f"Pair    : {data['pair']}")
@@ -40,13 +40,18 @@ class Trade:
         print(f"TP      : {data['TP']}")
         print(f"Hasil   : {data['hasil']} USD")
         print(f"Catatan : {data['catatan']}")
-        try:
-            pilihan = input("Apakah anda yakin (y/n) : ")
-            if pilihan == "y":
-                self.db.append(data)
-                buat(self.db)
-                print("✅ Trade berhasil ditambahkan!")
-            else:
-                pass
-        except ValueError as e:
-            print(f"Input tidak valid {e}")
+
+    def save_json(self):
+        print(self.tampilan_ringkasan())
+        while True:
+            try:
+                pilihan = input("Apakah anda yakin (y/n) : ")
+                if pilihan == "y":
+                    self.db.append(self.to_dict())
+                    buat(self.db)
+                    print("✅ Trade berhasil ditambahkan!")
+                    return
+                else:
+                    return
+            except ValueError as e:
+                print(f"Input tidak valid {e}")

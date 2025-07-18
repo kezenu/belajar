@@ -1,57 +1,24 @@
 [
   {
-    "tanggal": "232",
-    "pair": "fewfwf",
-    "posisi": "Sell",
-    "lot": 4.0,
-    "entry": 5.0,
-    "SL": 6.0,
-    "TP": 4.0,
-    "hasil": 6.0,
-    "catatan": "twetwt"
-  },
-  {
-    "tanggal": "2324",
-    "pair": "fwefwqf",
-    "posisi": "Buy",
-    "lot": 9.0,
-    "entry": 3.0,
-    "SL": 1.0,
-    "TP": 4.0,
-    "hasil": 532.0,
-    "catatan": "egfqweg"
-  },
-  {
-    "tanggal": "12-02-1990",
-    "pair": "gbpusd",
+    "tanggal": "2019-08-12 00:00:00",
+    "pair": "dfwe",
     "posisi": "Buy",
     "lot": 5.0,
     "entry": 5.0,
-    "SL": 4.0,
+    "SL": 3.0,
+    "TP": 7.0,
+    "hasil": 45.0,
+    "catatan": "efgwfw"
+  },
+  {
+    "tanggal": "1992-05-12",
+    "pair": "fdf",
+    "posisi": "Buy",
+    "lot": 5.0,
+    "entry": 5.0,
+    "SL": 3.0,
     "TP": 7.0,
     "hasil": 5.0,
-    "catatan": "breakout"
-  },
-  {
-    "tanggal": "23",
-    "pair": "fewfw",
-    "posisi": "Buy",
-    "lot": 5.0,
-    "entry": 5.0,
-    "SL": 4.0,
-    "TP": 6.0,
-    "hasil": 45.0,
-    "catatan": "gergew"
-  },
-  {
-    "tanggal": "2131",
-    "pair": "fwefwq",
-    "posisi": "Buy",
-    "lot": 5.0,
-    "entry": 5.0,
-    "SL": 4.0,
-    "TP": 6.0,
-    "hasil": 45.0,
-    "catatan": "hghrehahh"
+    "catatan": "rggwerg"
   }
 ]

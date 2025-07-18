@@ -1,3 +1,4 @@
+from datetime import datetime
 a = "Input tidak valid"
 
 def menu_validator(prompt):
@@ -22,6 +23,17 @@ def buy_sell_validator(prompt):
             else:
                 print("❗ Mohon hanya masukan 1 (Buy) atau 2 (Sell)")
         except ValueError as e:
+            print(f"{a} : {e}")
+
+def validasi_tanggal(promt):
+    while True:
+        try:
+            tanggal = input(promt)
+            format_tanggal = "%d-%m-%Y"
+            objek_tanggal = datetime.strptime(tanggal, format_tanggal)
+            hanya_tanggal = objek_tanggal.date()
+            return str(hanya_tanggal)
+        except Exception as e:
             print(f"{a} : {e}")
 
 class Validator_SLTP:
