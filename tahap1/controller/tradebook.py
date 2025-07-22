@@ -23,7 +23,7 @@ class Tradebook:
     
     # fumgsi untuk mencari data dari database dengan kata kunci pair dan menampilkannya
     def cari_by_pair(self, pair):
-        hasil = [x for x in self.trade if x['pair'].lower() == pair.lower()]
+        hasil = [x for x in self.trades if x['pair'].lower() == pair.lower()]
         if not hasil:
             print(f"Tidak ada trade dengan pair: {pair}")
         else:
