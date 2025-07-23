@@ -8,7 +8,7 @@ def menu_validator(prompt):
     while True:
         try:
             pilihan = int(input(prompt))
-            if 0 <= pilihan <= 4:
+            if 0 <= pilihan <= 5:
                 return pilihan
             else:
                 print("❗ Pilihan tidak tersedia.")

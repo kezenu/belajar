@@ -1,8 +1,7 @@
 from controller.trade import trade_input
 from controller.tradebook import Tradebook
 from utils.validasi import menu_validator
-
-
+ 
 # Menu utama
 while True:
     print("\n=== CATATAN TRADING ===")
@@ -10,6 +9,7 @@ while True:
     print("2. Lihat Semua Trade")
     print("3. Cari trade")
     print("4. Hapus trade")
+    print("5. Peforma trading")
     print("0. Keluar")
     pilihan = menu_validator("Masukan Pilihan : ")
 
@@ -26,6 +26,12 @@ while True:
         pair = input("Masukan pair yang ingin dicari : ")
         tradebook.cari_by_pair(pair)
     elif pilihan == 4: # Menghapus trade yang telah disimpan dengan kata kunci urutan
-        pass
+        tradebook = Tradebook()
+        tradebook.lihat()
+        index = int(input("Masukkan nomor trade yang ingin dihapus: ")) - 1
+        tradebook.hapus_by_index(index)
+    elif pilihan == 5:
+        tradebook = Tradebook()
+        tradebook.performa_trade()
     else:
         print("pilihan tidak valid")

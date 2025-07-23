@@ -1,4 +1,4 @@
-from utils.database import lihat
+from utils.database import lihat, buat
 from controller.trade import Trade
 
 class Tradebook:
@@ -40,3 +40,33 @@ class Tradebook:
                 print(f"TP      : {item['TP']}")
                 print(f"Hasil   : {item['hasil']} USD")
                 print(f"Catatan : {item['catatan']}")
+    
+    def hapus_by_index(self, index):
+        if 0 <= index < len(self.trades):
+            trade = self.trades[index]
+            print("\n--- Data yang akan dihapus ---")
+            for k, v in trade.items():
+                print(f"{k.capitalize()} : {v}")
+            konfirmasi = input("Yakin ingin dihapus? (y/n): ")
+            if konfirmasi.lower() == "y":
+                del self.trades[index]
+                buat(self.trades)
+                print("✅ Trade berhasil dihapus.")
+            else:
+                print("❌ Dibatalkan.")
+        else:
+            print("❗ Index tidak ditemukan.")
+
+    def performa_trade(self):
+        if not self.trades:
+            print("Data Trading kosong")
+            return
+        
+        total = len(self.trades)
+        win = [x for x in self.trades if x["hasil"] < 0]
+        los = [x for x in self.trades if x["hasil"] > 0]
+        net_profit = sum([x["hasil"] for x in self.trades])
+        print(net_profit)
+        print(len(win))
+        print(len(los))
+        print(total)
