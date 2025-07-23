@@ -41,6 +41,14 @@ def validasi_tanggal(prompt):
         except Exception as e:
             print(f"{a} : {e}")
 
+def float_validasi(prompt):
+    while True:
+        try:
+            x = float(input(prompt))
+            return x
+        except ValueError as e:
+            print(f" {a} : {e}")
+
 # class atau fungsi agar user memasukan angka yang benar, contoh : saat buy tidak mungkin sl diatas harga entry, dan validasi agar memasukan angka 
 class Validator_SLTP:
     def __init__(self, entry, posisi):

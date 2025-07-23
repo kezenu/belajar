@@ -1,21 +1,35 @@
-from utils.validasi import buy_sell_validator, validasi_tanggal
+from utils.validasi import buy_sell_validator, validasi_tanggal, float_validasi
 from utils.validasi import Validator_SLTP
 from utils.database import buat, lihat
 
+
+def trade_input():
+    db = lihat()
+    tanggal = validasi_tanggal("Masukan Tanggal (Contoh: 17-08-1945): ")
+    pair = input("Pair (Misal: GBPUSD): ")
+    posisi = buy_sell_validator("Posisi (1 = buy, 2 = sell):(1/2) : ")
+    lot = float_validasi("Lot (Misal: 0.5): ")
+    entry = float_validasi("Harga Entry: ")
+    validasi_sltp = Validator_SLTP(entry, posisi)
+    sl = validasi_sltp.validator_sl(" Masukan SL :")
+    tp = validasi_sltp.validator_tp("Masukan TP :")
+    hasil = float_validasi("Profit/Loss (USD): ")
+    catatan = input("Catatan (opsional): ")
+    return Trade(db, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan)
+
 class Trade:
     # fungsi inisialisasi untuk input trade
-    def __init__(self):
-        self.db = lihat()
-        self.tanggal = validasi_tanggal("Masukan Tanggal (Contoh: 17-08-1945): ")
-        self.pair = input("Pair (Misal: GBPUSD): ")
-        self.posisi = buy_sell_validator("Posisi (1 = buy, 2 = sell):(1/2) : ")
-        self.lot = float(input("Lot (Misal: 0.5): "))
-        self.entry = float(input("Harga Entry: "))
-        validasi_sltp = Validator_SLTP(self.entry, self.posisi)
-        self.sl = validasi_sltp.validator_sl(" Masukan SL :")
-        self.tp = validasi_sltp.validator_tp("Masukan TP :")
-        self.hasil = float(input("Profit/Loss (USD): "))
-        self.catatan = input("Catatan (opsional): ")
+    def __init__(self, db, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan):
+        self.db = db
+        self.tanggal = tanggal
+        self.pair = pair
+        self.posisi = posisi
+        self.lot = lot
+        self.entry = entry
+        self.sl = sl
+        self.tp = tp
+        self.hasil = hasil
+        self.catatan = catatan
 
     # memastikan masukan user berbentuk dict
     def to_dict(self):
@@ -55,7 +69,8 @@ class Trade:
                     buat(self.db)
                     print("✅ Trade berhasil ditambahkan!")
                     return
-                else:
-                    return
+                if not "y" or "n":
+                    print("Mohon masukan input yang benar")
             except ValueError as e:
                 print(f"Input tidak valid {e}")
+

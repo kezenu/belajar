@@ -1,4 +1,4 @@
-from controller.trade import Trade
+from controller.trade import trade_input
 from controller.tradebook import Tradebook
 from utils.validasi import menu_validator
 
@@ -16,7 +16,7 @@ while True:
     if pilihan == 0: # pilihan 0 untuk keluar dari aplikasi
         break
     elif pilihan == 1: # menambahkan trade ke jurnal
-        trade = Trade()
+        trade = trade_input()
         trade.save_json()
     elif pilihan == 2: # Melihat semua transaksi
         tradebook = Tradebook()
