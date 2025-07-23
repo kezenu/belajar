@@ -44,8 +44,7 @@ def validasi_tanggal(prompt):
 def float_validasi(prompt):
     while True:
         try:
-            x = float(input(prompt))
-            return x
+            return float(input(prompt))
         except ValueError as e:
             print(f" {a} : {e}")
 

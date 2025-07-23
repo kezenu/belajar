@@ -4,7 +4,7 @@ from utils.database import buat, lihat
 
 
 def trade_input():
-    db = lihat()
+    data_list = lihat()
     tanggal = validasi_tanggal("Masukan Tanggal (Contoh: 17-08-1945): ")
     pair = input("Pair (Misal: GBPUSD): ")
     posisi = buy_sell_validator("Posisi (1 = buy, 2 = sell):(1/2) : ")
@@ -15,12 +15,12 @@ def trade_input():
     tp = validasi_sltp.validator_tp("Masukan TP :")
     hasil = float_validasi("Profit/Loss (USD): ")
     catatan = input("Catatan (opsional): ")
-    return Trade(db, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan)
+    return Trade(data_list, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan)
 
 class Trade:
     # fungsi inisialisasi untuk input trade
-    def __init__(self, db, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan):
-        self.db = db
+    def __init__(self, data_list, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan):
+        self.data_list = data_list
         self.tanggal = tanggal
         self.pair = pair
         self.posisi = posisi
@@ -65,12 +65,11 @@ class Trade:
             try:
                 pilihan = input("Apakah anda yakin (y/n) : ")
                 if pilihan == "y":
-                    self.db.append(self.to_dict())
-                    buat(self.db)
+                    self.data_list.append(self.to_dict())
+                    buat(self.data_list)
                     print("✅ Trade berhasil ditambahkan!")
                     return
-                if not "y" or "n":
+                if pilihan not in "y" or "n":
                     print("Mohon masukan input yang benar")
             except ValueError as e:
                 print(f"Input tidak valid {e}")
-

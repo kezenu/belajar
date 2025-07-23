@@ -3,7 +3,7 @@ from controller.tradebook import Tradebook
 from utils.validasi import menu_validator
 
 
-# menu utama
+# Menu utama
 while True:
     print("\n=== CATATAN TRADING ===")
     print("1. Tambah Trade")
@@ -12,7 +12,7 @@ while True:
     print("4. Hapus trade")
     print("0. Keluar")
     pilihan = menu_validator("Masukan Pilihan : ")
-    
+
     if pilihan == 0: # pilihan 0 untuk keluar dari aplikasi
         break
     elif pilihan == 1: # menambahkan trade ke jurnal

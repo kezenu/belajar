@@ -1,4 +1,5 @@
 from utils.database import lihat
+from controller.trade import Trade
 
 class Tradebook:
     def __init__(self):
