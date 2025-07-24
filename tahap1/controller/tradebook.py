@@ -63,10 +63,18 @@ class Tradebook:
             return
         
         total = len(self.trades)
-        win = [x for x in self.trades if x["hasil"] < 0]
-        los = [x for x in self.trades if x["hasil"] > 0]
+        win = [x for x in self.trades if x["hasil"] > 0]
+        los = [x for x in self.trades if x["hasil"] < 0]
         net_profit = sum([x["hasil"] for x in self.trades])
-        print(net_profit)
-        print(len(win))
-        print(len(los))
-        print(total)
+        total_win = sum([x["hasil"] for x in win])
+        rata_rata = net_profit / total
+        winrate = len(win) / total *100
+        best = max(self.trades, key=lambda x: x["hasil"])
+        worst = min(self.trades, key=lambda x: x["hasil"])
+        print(f"Total semua trade           : {total}")
+        print(f"Total Win | Los             : {len(win)} | {len(los)}")
+        print(f"Winrate                     : {winrate:.2f} %")
+        print(f"Rata-rata hasil per trade   : {rata_rata:.2f} USD")
+        print(F"Total profit                : {net_profit:.2f} USD")
+        print(f"Trade terbaik               : {best['hasil']} USD ({best['pair']}) - {best['tanggal']} ")
+        print(f"Trade terburuk              : {worst['hasil']} USD ({worst['pair']}) - {worst['tanggal']} ")
