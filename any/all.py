@@ -3,21 +3,21 @@ profit = [120, 0, -50, 100]
 # Apakah ada trade yang hasilnya negatif?
 
 a = any(x < 0 for x in profit)
-print(a)
+# print(a)
 
 hasil = [10, 20, 30, 40]
 # Gunakan all() untuk mengecek:
 # Apakah semua hasil bernilai positif?
 
 b = all(x < 0 for x in hasil)
-print(b)
+# print(b)
 
 catatan = ["oke", "baik", "", "mantap"]
 # Gunakan any() untuk mengecek:
 # Apakah ada catatan yang kosong (string kosong)?
 
 c = any(x == "" for x in catatan)
-print(c)
+# print(c)
 
 nama = ["wisnu", "budi", "sanjaya"]
 # Gunakan all() untuk mengecek:
@@ -25,7 +25,7 @@ nama = ["wisnu", "budi", "sanjaya"]
 # Hint: pakai string method .islower()
 
 d = all(map(lambda x :x.islower(), nama))
-print(d)
+# print(d)
 
 # Pair harus terdiri dari 6 huruf kapital (misalnya: BTCUSD, EURUSD)
 # Harus semua huruf kapital (.isupper())
@@ -35,3 +35,8 @@ pair = ["BTCUSD", "XAUusd", "EURUSD", "GBPJPY"]
 
 # Output yang diharapkan: False
 # Karena "XAUusd" tidak semua huruf kapital
+
+hasil = zip(map(lambda x: len(x) == 6, pair),map(lambda x: x.isupper(), pair))
+print(all(a and b for a, b in hasil ))
+hasil2 = all(map(lambda x: len(x) == 6 and x.isupper(), pair))
+print(hasil2)
