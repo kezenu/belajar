@@ -1,26 +1,32 @@
-from utils.validasi import buy_sell_validator, validasi_tanggal, float_validasi
-from utils.validasi import Validator_SLTP
-from utils.database import buat, lihat
-
+from utils.validasi import (
+    buy_sell_validator,
+    validasi_tanggal,
+    float_validasi,
+    ValidatorSLTP,
+)
+from utils.database import simpan, lihat
 
 def trade_input():
-    data_list = lihat()
-    tanggal = validasi_tanggal("Masukan Tanggal (Contoh: 17-08-1945): ")
+    """Mengumpulkan input trade dari user dan membuat instance Trade."""
+    trades = lihat()
+    tanggal = validasi_tanggal("Masukkan Tanggal (Contoh: 17-08-1945): ")
     pair = input("Pair (Misal: GBPUSD): ")
-    posisi = buy_sell_validator("Posisi (1 = buy, 2 = sell):(1/2) : ")
+    posisi = buy_sell_validator("Posisi (1 = Buy, 2 = Sell): ")
     lot = float_validasi("Lot (Misal: 0.5): ")
     entry = float_validasi("Harga Entry: ")
-    validasi_sltp = Validator_SLTP(entry, posisi)
-    sl = validasi_sltp.validator_sl(" Masukan SL :")
-    tp = validasi_sltp.validator_tp("Masukan TP :")
+    validator = ValidatorSLTP(entry, posisi)
+    sl = validator.validator_sl("Masukkan SL: ")
+    tp = validator.validator_tp("Masukkan TP: ")
     hasil = float_validasi("Profit/Loss (USD): ")
     catatan = input("Catatan (opsional): ")
-    return Trade(data_list, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan)
+
+    return Trade(trades, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan)
 
 class Trade:
-    # fungsi inisialisasi untuk input trade
-    def __init__(self, data_list, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan):
-        self.data_list = data_list
+    """Representasi satu entri trade."""
+
+    def __init__(self, trades, tanggal, pair, posisi, lot, entry, sl, tp, hasil, catatan):
+        self.trades = trades
         self.tanggal = tanggal
         self.pair = pair
         self.posisi = posisi
@@ -31,8 +37,8 @@ class Trade:
         self.hasil = hasil
         self.catatan = catatan
 
-    # memastikan masukan user berbentuk dict
     def to_dict(self):
+        """Konversi objek ke bentuk dict (untuk disimpan)."""
         return {
             "tanggal": self.tanggal,
             "pair": self.pair,
@@ -44,32 +50,26 @@ class Trade:
             "hasil": self.hasil,
             "catatan": self.catatan
         }
-    
-    # tampilan ringkasan saat user mendapat konfirmasi, disa digunakan berulang
-    def tampilan_ringkasan(self):
-        data = self.to_dict()
-        print(f"Tanggal : {data['tanggal']}")
-        print(f"Pair    : {data['pair']}")
-        print(f"Posisi  : {data['posisi']}")
-        print(f"Lot     : {data['lot']}")
-        print(f"Entry   : {data['entry']}")
-        print(f"SL      : {data['SL']}")
-        print(f"TP      : {data['TP']}")
-        print(f"Hasil   : {data['hasil']} USD")
-        print(f"Catatan : {data['catatan']}")
 
-    # menyimpan data ke database saat user telah konfirmasi
+    def tampilan_ringkasan(self):
+        """Menampilkan ringkasan trade (sebelum disimpan)."""
+        data = self.to_dict()
+        print("\n=== RINGKASAN TRADE ===")
+        for k, v in data.items():
+            print(f"{k.capitalize():8} : {v}")
+
     def save_json(self):
+        """Konfirmasi dan simpan trade ke file JSON."""
         self.tampilan_ringkasan()
         while True:
-            try:
-                pilihan = input("Apakah anda yakin (y/n) : ")
-                if pilihan == "y":
-                    self.data_list.append(self.to_dict())
-                    buat(self.data_list)
-                    print("✅ Trade berhasil ditambahkan!")
-                    return
-                if pilihan not in "y" or "n":
-                    print("Mohon masukan input yang benar")
-            except ValueError as e:
-                print(f"Input tidak valid {e}")
+            pilihan = input("Apakah anda yakin ingin menyimpan? (y/n): ").lower()
+            if pilihan == "y":
+                self.trades.append(self.to_dict())
+                simpan(self.trades)
+                print("✅ Trade berhasil ditambahkan!")
+                return
+            elif pilihan == "n":
+                print("❌ Penyimpanan dibatalkan.")
+                return
+            else:
+                print("❗ Mohon masukkan 'y' atau 'n'.")

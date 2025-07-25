@@ -1,12 +1,15 @@
 import os
 import json
 
-PATH = "tahap1/data/data.json"
+DATA_DIR = "tahap1/data"
+DATA_FILE = os.path.join(DATA_DIR, "data.json")
 
 def lihat():
-    if not os.path.exists(PATH):
+    """Membaca data trade dari file JSON."""
+    if not os.path.exists(DATA_FILE):
         return []
-    with open(PATH,"r") as f:
+
+    with open(DATA_FILE, "r") as f:
         try:
             data = json.load(f)
             if isinstance(data, list):
@@ -16,6 +19,8 @@ def lihat():
         except json.JSONDecodeError:
             return []
 
-def buat(data):
-    with open(PATH, "w") as f:
+def simpan(data):
+    """Menyimpan data trade ke file JSON."""
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=2)
