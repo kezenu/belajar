@@ -9,6 +9,7 @@ def tampilkan_menu():
     print("3. Cari trade")
     print("4. Hapus trade")
     print("5. Performa trading")
+    print("6. Eksport ke CSV")
     print("0. Keluar")
 
 def handle_tambah_trade():
