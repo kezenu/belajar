@@ -7,7 +7,7 @@ def menu_validator(prompt: str) -> int:
     while True:
         try:
             pilihan = int(input(prompt))
-            if 0 <= pilihan <= 5:
+            if 0 <= pilihan <= 6:
                 return pilihan
             print("❗ Pilihan tidak tersedia.")
         except ValueError as e:
