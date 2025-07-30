@@ -16,26 +16,28 @@ data = {
 
 df = pd.DataFrame(data)
 
-"""
-✅ Tahap 3: Soal (dengan data baru)
-1. Tambahkan kolom MA3 → rata-rata 3 hari terakhir dari close
-
-2. Tambahkan kolom kondisi_candle → bullish, bearish, atau doji
-
-3. Hitung jumlah masing-masing kondisi
-
-4. Tambahkan kolom ma_gap = close - MA3
-(boleh abaikan NaN pertama)
-"""
-
-df = pd.DataFrame(data)
-print(df)
-
-# moving average 3
+# MA3 (moving average 3 hari)
 df['ma3'] = df['close'].rolling(window=3).mean()
-print(df)
 
-# kolom kondisi candle
-df['candlestik'] = ['bullish' if o < c else 'bearish' for o, c in zip(df['open'], df['close'])]
-print(df)
+# Kondisi candle
+df['kondisi_candle'] = [
+    'bullish' if o < c else
+    'bearish' if o > c else
+    'doji'
+    for o, c in zip(df['open'], df['close'])
+]
 
+# Keterangan posisi terhadap MA
+df['keterangan'] = [
+    f"Harga di{'atas' if c > m else 'bawah'} rata-rata"
+    for c, m in zip(df['close'], df['ma3'])
+]
+
+# Gap antara close dan MA3
+df['ma_gap'] = df['close'] - df['ma3']
+
+# Hitung jumlah kondisi
+print(df['kondisi_candle'].value_counts())
+
+# Tampilkan hasil
+print(df)
