@@ -39,6 +39,16 @@ df['hari'] =  pd.to_datetime(df['tanggal']).dt.day_name()
 print(df)
 
 # 📌 Soal 2: Hitung rata-rata return untuk tiap hari (Senin, Selasa, dst)
-df = df.groupby('hari')['return'].mean()
-print(df)
+hari_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+df_mean = df.groupby('hari')['return'].mean().reindex(hari_order)
+print(df_mean)
 
+#  Soal 3: Hitung total volume untuk setiap hari
+
+df_sum = df.groupby('hari')['volume'].sum()
+print(df_sum)
+
+# 📌 Soal 4: Ambil hari dengan rata-rata return tertinggi
+df_max = df_mean.max()
+hari_terbaik = df_mean.idxmax()
+print(f"Hari rata-rata tertinggi : {hari_terbaik} : {df_max}")
