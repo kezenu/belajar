@@ -27,12 +27,28 @@ def profit(row):
         return (row['exit'] - row['entry']) * row['qty']
     elif row['side'] == 'sell':
         return (row['entry'] - row['exit']) * row['qty']
-    else:
-        None
+
 
 df['profit'] = df.apply(profit, axis=1)
+print(df)
 
-df_sum = df['profit'].sum()
-df_profit = [f"Total Profit / Loss : {p}" for p in df['profit'] if len(p) >0]
-print(f" Total Profit : {df_sum}")
-print(df_profit)
+
+def performa(df):
+    df_sum = df['profit'].sum()
+    df_total = df['profit'].count()
+    df_win = [x for x in df['profit'] if x > 0]
+    df_los = [x for x in df['profit'] if x < 0]
+    df_mean = df['profit'].mean()
+    df_winrate = round(len(df_win) / df_total * 100, 2)
+    df_profit_pair = df.groupby('pair')['profit'].sum()
+
+    print(f"=" *30)
+    print(f"Total Profit                : {df_sum}")
+    print(f"Total trade                 : {df_total}")
+    print(f"Total win | loss            : {len(df_win)} | {len(df_los)}")
+    print(f"Winrate                     : {df_winrate} %")
+    print(f"Rata-rata profit per trade  : {df_mean}")
+    print(f"=" *30)
+    print(df_profit_pair)
+
+performa(df)
