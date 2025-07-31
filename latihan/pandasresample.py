@@ -23,14 +23,33 @@ open, high, low, close, range, direction
 start = datetime(2025, 7, 31, 9, 0)
 data = []
 
-for i in range(18):  # 18 menit data
-    time = start + timedelta(minutes=i)
-    open_ = 100 + i
-    high = open_ + 2
-    low = open_ - 1
-    close = open_ + (i % 2 - 1)
-    data.append({"time": time, "open": open_, "high": high, "low": low, "close": close})
+from datetime import datetime, timedelta
 
+start = datetime(2025, 7, 31, 9, 0)
+data = []
+
+# Harga awal
+price = 100
+
+for i in range(18):  # 18 menit
+    time = start + timedelta(minutes=i)
+    
+    # Fluktuasi harga: tiap 3 menit berubah arah
+    if (i // 3) % 2 == 0:
+        # Fase naik
+        open_ = price
+        close = open_ + 1
+    else:
+        # Fase turun
+        open_ = price
+        close = open_ - 1
+    
+    high = max(open_, close) + 1
+    low = min(open_, close) - 1
+    
+    price = close  # update harga utk menit berikutnya
+
+    data.append({"time": time, "open": open_, "high": high, "low": low, "close": close})
 df = pd.DataFrame(data).set_index("time")
 
 df_3min = df.resample('3min').agg({
@@ -50,6 +69,14 @@ def direction(row):
     else:
         return "Doji"
 
-df_3min['signal'] = df_3min.apply(direction, axis=1)
+df_3min['direction'] = df_3min.apply(direction, axis=1)
+print(df)
 print(df_3min)
 print(df_3min.value_counts('direction'))
+
+df = df.sort_index()
+df_3min =  df_3min.sort_index()
+
+df_join = pd.merge_asof(df, df_3min[['direction']], left_index=True, right_index=True)
+df_join.rename(columns={'direction': 'direction_3m'}, inplace=True)
+print(df_join)
