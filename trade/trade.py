@@ -30,8 +30,8 @@ MIDNIGHT_CLOSE_TIME = time(0, 0, 10)
 
 # --- PENAMBAHAN: FILTER SESI TRADING ---
 # Hanya trade di jam-jam likuiditas tinggi (Sesi London & New York)
-TRADING_SESSION_START_TIME = time(13, 0, 0) # <-- ANDA BISA UBAH INI
-TRADING_SESSION_END_TIME = time(22, 0, 0)   # <-- ANDA BISA UBAH INI
+TRADING_SESSION_START_TIME = time(13, 0, 0) 
+TRADING_SESSION_END_TIME = time(22, 0, 0)   
 
 # --- PENAMBAHAN: FILTER KEPERCAYAAN MODEL ---
 # Hanya trade jika model yakin di atas persentase ini
