@@ -1,6 +1,7 @@
 from controller.trade import trade_input
 from controller.tradebook import Tradebook
 from utils.validasi import menu_validator
+from utils.exportcsv import eksport_csv
 
 def tampilkan_menu():
     print("\n=== CATATAN TRADING ===")
@@ -9,6 +10,7 @@ def tampilkan_menu():
     print("3. Cari trade")
     print("4. Hapus trade")
     print("5. Performa trading")
+    print("6. Eksport ke CSV")
     print("0. Keluar")
 
 def handle_tambah_trade():
@@ -55,6 +57,8 @@ def main():
             handle_hapus_trade()
         elif pilihan == 5:
             handle_performa()
+        elif pilihan == 6:
+            eksport_csv()
         else:
             print("❗ Pilihan tidak valid.")
 
