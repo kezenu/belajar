@@ -1,12 +1,12 @@
 import MetaTrader5 as mt5
 import pandas as pd
+import pandas_ta as ta
 import numpy as np
 import joblib
 from datetime import datetime, time
 import pytz
-import time
 import warnings
-
+import time as dt
 warnings.filterwarnings('ignore')
 
 # --- KONFIGURASI UTAMA ---
@@ -298,22 +298,22 @@ def main():
             if now_wib.time() >= MIDNIGHT_CLOSE_TIME and now_wib.time() < time(0, 1, 0):
                 print("Sekarang pukul 00:00 WIB. Menutup semua posisi...")
                 close_all_positions()
-                time.sleep(60)
+                dt.sleep(60)
                 continue
 
             # Fungsi is_trading_time sekarang sudah mencakup filter sesi
             if not is_trading_time():
-                time.sleep(60)
+                dt.sleep(60)
                 continue
 
             if get_open_positions():
                 print("Ada posisi terbuka. Menunggu...")
-                time.sleep(60)
+                dt.sleep(60)
                 continue
 
             account_info = get_account_info()
             if not check_all_safeguards(state, account_info):
-                time.sleep(60)
+                dt.sleep(60)
                 continue
 
             print("Aman untuk trading. Melakukan prediksi...")
@@ -336,7 +336,7 @@ def main():
                 
                 place_order(signal, sl_price, tp_price)
             
-            time.sleep(10)
+            dt.sleep(10)
 
     except KeyboardInterrupt:
         print("\nBot dihentikan oleh pengguna.")

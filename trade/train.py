@@ -9,7 +9,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # --- KONFIGURASI ---
-DATA_FILE = "EURUSD_H1_data.csv" # File yang dihasilkan dari Fase 1
+DATA_FILE = "EURUSD_16385_data.csv" # File yang dihasilkan dari Fase 1
 MODEL_BUY_FILE = "model_buy.pkl"
 MODEL_SELL_FILE = "model_sell.pkl"
 
@@ -25,7 +25,7 @@ def load_and_prepare_data(filepath):
     feature_columns = [
         'RSI_14', 'STOCHk_14_3_3', 'STOCHd_14_3_3',
         'SMA_20', 'SMA_50', 'EMA_100',
-        'ATRr_14', 'BBL_20_2.0', 'BBM_20_2.0', 'BBU_20_2.0', 'BBB_20_2.0', 'BBP_20_2.0',
+        'ATRr_14', 'BBL_20_2.0_2.0', 'BBM_20_2.0_2.0', 'BBU_20_2.0_2.0', 'BBB_20_2.0_2.0', 'BBP_20_2.0_2.0',
         'ADX_14'
     ]
     
