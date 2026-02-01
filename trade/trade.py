@@ -1,348 +1,318 @@
+# ===============================
+# PRODUCTION-GRADE ML TRADING BOT (FIXED VERSION)
+# ===============================
+
 import MetaTrader5 as mt5
 import pandas as pd
 import pandas_ta as ta
 import numpy as np
 import joblib
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 import pytz
 import warnings
 import time as dt
-warnings.filterwarnings('ignore')
+import os
+import logging
 
-# --- KONFIGURASI UTAMA ---
+# --- SETUP LOGGING ---
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# --- KONFIGURASI ---
 SYMBOL = "EURUSD"
 TIMEFRAME = mt5.TIMEFRAME_H1
 MAGIC_NUMBER = 12345
+TIMEZONE = pytz.timezone("Asia/Jakarta")
 
-# --- KONFIGURASI MANAJEMEN RISIKO ---
+# Manajemen Risiko
 RISK_PERCENT = 2.0
-RR_RATIO = 2.0
 MIN_LOT = 0.01
 ATR_PERIOD = 14
 RISK_MULTIPLIER = 1.5
-REWARD_MULTIPLIER = 3.0
+REWARD_MULTIPLIER = 1.0
+LOSS_COOLDOWN_MINUTES = 30
 
-# --- KONFIGURASI FILTER & BATASAN ---
-# Waktu Trading Umum (WIB)
-TRADING_START_TIME = time(5, 0, 0)
-TRADING_END_TIME = time(23, 59, 0)
-MIDNIGHT_CLOSE_TIME = time(0, 0, 10)
-
-# --- PENAMBAHAN: FILTER SESI TRADING ---
-# Hanya trade di jam-jam likuiditas tinggi (Sesi London & New York)
-TRADING_SESSION_START_TIME = time(13, 0, 0) 
-TRADING_SESSION_END_TIME = time(22, 0, 0)   
-
-# --- PENAMBAHAN: FILTER KEPERCAYAAN MODEL ---
-# Hanya trade jika model yakin di atas persentase ini
-MODEL_CONFIDENCE_THRESHOLD = 0.70 # <-- ANDA BISA UBAH INI (0.70 = 70%)
-
-# Batasan Harian
+# Filter & Batasan
+TRADING_SESSION_START = time(13, 0)
+TRADING_SESSION_END = time(22, 0)
+MIDNIGHT_CLOSE = time(0, 0, 10)
+MODEL_CONFIDENCE_THRESHOLD = 0.70
 MAX_TRADES_PER_DAY = 3
 MAX_DAILY_LOSS_PERCENT = 5.0
 MAX_CONSECUTIVE_LOSSES = 3
-
-# Batasan Akun
 MAX_DRAWDOWN_PERCENT = 15.0
-
-# Filter Spread
 MAX_SPREAD_MULTIPLIER = 3.0
 
-# --- FILE MODEL ---
+# File
 MODEL_BUY_FILE = "model_buy.pkl"
 MODEL_SELL_FILE = "model_sell.pkl"
+JOURNAL_FILE = "trade_journal.csv"
+STATE_FILE = "bot_state.json"
 
 # --- STATE MANAGEMENT ---
 class DailyState:
     def __init__(self):
         self.reset()
-    
+
     def reset(self):
-        self.date = datetime.now(pytz.timezone("Asia/Jakarta")).date()
+        self.date = datetime.now(TIMEZONE).date()
         self.trades_today = 0
         self.daily_pnl = 0.0
         self.consecutive_losses = 0
-        self.initial_balance = self._get_initial_balance()
+        self.last_loss_time = None
+        acc = mt5.account_info()
+        self.initial_balance = acc.balance if acc else 0.0
+        self.peak_balance = self._load_peak_balance()
 
-    def _get_initial_balance(self):
-        account = mt5.account_info()
-        return account.balance if account else 0
+    def _load_peak_balance(self):
+        try:
+            if os.path.exists(STATE_FILE):
+                with open(STATE_FILE, 'r') as f:
+                    import json
+                    data = json.load(f)
+                    return max(data.get('peak_balance', self.initial_balance), self.initial_balance)
+        except Exception as e:
+            logging.warning(f"Gagal memuat state dari file: {e}")
+        return self.initial_balance
 
-    def is_new_day(self):
-        return datetime.now(pytz.timezone("Asia/Jakarta")).date() != self.date
+    def _save_peak_balance(self):
+        try:
+            with open(STATE_FILE, 'w') as f:
+                import json
+                json.dump({'peak_balance': self.peak_balance}, f)
+        except Exception as e:
+            logging.error(f"Gagal menyimpan state ke file: {e}")
 
     def update(self, pnl):
         self.daily_pnl += pnl
         self.trades_today += 1
         if pnl < 0:
             self.consecutive_losses += 1
+            self.last_loss_time = datetime.now(TIMEZONE)
         else:
             self.consecutive_losses = 0
+        
+        current_balance = self._get_current_balance()
+        if current_balance > self.peak_balance:
+            self.peak_balance = current_balance
+            self._save_peak_balance()
 
-# --- FUNGSI-FUNGSI PENDUKUNG ---
+    def _get_current_balance(self):
+        acc = mt5.account_info()
+        return acc.balance if acc else 0.0
 
+    def cooldown_active(self):
+        if not self.last_loss_time:
+            return False
+        return datetime.now(TIMEZONE) < self.last_loss_time + timedelta(minutes=LOSS_COOLDOWN_MINUTES)
+
+# --- JOURNALING ---
+def init_journal():
+    if not os.path.exists(JOURNAL_FILE):
+        pd.DataFrame(columns=[
+            'open_time', 'action', 'lot_size', 'entry_price', 'sl_price', 'tp_price',
+            'close_time', 'exit_price', 'pnl', 'exit_reason'
+        ]).to_csv(JOURNAL_FILE, index=False)
+
+def log_trade(trade_data: dict):
+    try:
+        df_new = pd.DataFrame([trade_data])
+        df_new.to_csv(JOURNAL_FILE, mode='a', header=False, index=False)
+    except Exception as e:
+        logging.error(f"Gagal menulis ke journal: {e}")
+
+# --- MT5 HELPERS ---
 def connect_mt5():
     if not mt5.initialize():
-        print("initialize() gagal, error code =", mt5.last_error())
+        logging.error(f"Gagal menghubungkan MT5, error: {mt5.last_error()}")
         return False
-    print("Berhasil terhubung ke MetaTrader 5")
+    logging.info("Berhasil terhubung ke MetaTrader 5")
     return True
 
-def get_account_info():
-    return mt5.account_info()
-
-def get_candles(symbol, timeframe, num_candles):
-    candles = mt5.copy_rates_from_pos(symbol, timeframe, 0, num_candles)
-    if candles is None:
-        print("Gagal mendapatkan candle, error:", mt5.last_error())
+def get_candles(n=200):
+    rates = mt5.copy_rates_from_pos(SYMBOL, TIMEFRAME, 0, n)
+    if rates is None:
+        logging.error(f"Gagal mendapatkan candle: {mt5.last_error()}")
         return None
-    df = pd.DataFrame(candles)
+    df = pd.DataFrame(rates)
     df['time'] = pd.to_datetime(df['time'], unit='s')
     df.set_index('time', inplace=True)
     return df
 
 def add_features(df):
-    df.ta.rsi(length=14, append=True)
-    df.ta.stoch(k=14, d=3, append=True)
-    df.ta.sma(length=20, append=True)
-    df.ta.sma(length=50, append=True)
-    df.ta.ema(length=100, append=True)
-    df.ta.atr(length=ATR_PERIOD, append=True)
-    df.ta.bbands(length=20, std=2, append=True)
-    df.ta.adx(length=14, append=True)
+    df.ta.rsi(14, append=True)
+    df.ta.sma(20, append=True)
+    df.ta.sma(50, append=True)
+    df.ta.ema(100, append=True)
+    df.ta.atr(ATR_PERIOD, append=True)
+    df.ta.adx(14, append=True)
+    # Nama kolom ATR dari pandas_ta adalah 'ATRr_14'
     return df.dropna()
 
-def calculate_lot_size(entry_price, sl_price):
-    account_info = get_account_info()
-    if not account_info: return MIN_LOT
-    balance = account_info.balance
-    risk_amount = balance * (RISK_PERCENT / 100.0)
+# --- RISK ENGINE ---
+def calculate_lot(entry, sl):
+    acc = mt5.account_info()
+    sym = mt5.symbol_info(SYMBOL)
+    if not acc or not sym: return MIN_LOT
+    if acc.balance < 0: return MIN_LOT
     
-    symbol_info = mt5.symbol_info(SYMBOL)
-    if not symbol_info: return MIN_LOT
-        
-    tick_value = symbol_info.trade_tick_value
-    sl_distance_points = abs(entry_price - sl_price) / symbol_info.point
-    lot_size = risk_amount / (sl_distance_points * tick_value)
+    risk_amt = acc.balance * (RISK_PERCENT / 100)
+    sl_points = abs(entry - sl) / sym.point
+    if sl_points == 0: return MIN_LOT
+
+    lot = risk_amt / (sl_points * sym.trade_tick_value)
+    lot = round(lot / sym.volume_step) * sym.volume_step
+    lot = max(sym.volume_min, min(lot, sym.volume_max))
     
-    lot_size = np.floor(lot_size * 100) / 100
-    return max(lot_size, MIN_LOT)
+    if acc.margin_free < (lot * sym.margin_initial):
+        logging.warning("Margin tidak cukup. Menggunakan lot minimum.")
+        return MIN_LOT
+    return lot
 
-def place_order(action, sl_price, tp_price):
-    symbol_info = mt5.symbol_info(SYMBOL)
-    if not symbol_info or not symbol_info.visible:
-        if not mt5.symbol_select(SYMBOL, True):
-            print("Gagal memilih simbol", SYMBOL)
-            return
-
+def spread_ok():
+    sym = mt5.symbol_info(SYMBOL)
     tick = mt5.symbol_info_tick(SYMBOL)
-    current_spread_points = tick.ask - tick.bid
+    if not sym or not tick: return False
     
-    if action == 'BUY':
-        sl_price_adjusted = sl_price - current_spread_points
-        entry_price_for_calc = tick.ask
-    else: # SELL
-        sl_price_adjusted = sl_price + current_spread_points
-        entry_price_for_calc = tick.bid
+    spread_points = (tick.ask - tick.bid) / sym.point
+    avg_spread_points = sym.spread
+    return spread_points <= avg_spread_points * MAX_SPREAD_MULTIPLIER
 
-    lot = calculate_lot_size(entry_price_for_calc, sl_price_adjusted)
+# --- SIGNAL & EXECUTION ---
+def predict_signal(buy_model, sell_model, feature_cols):
+    df_features = add_features(get_candles())
+    if df_features is None or len(df_features) < 50: return None
     
-    price = entry_price_for_calc
-    request = {
-        "action": mt5.TRADE_ACTION_DEAL, "symbol": SYMBOL, "volume": lot,
-        "type": mt5.ORDER_TYPE_BUY if action == 'BUY' else mt5.ORDER_TYPE_SELL,
-        "price": price, "sl": sl_price_adjusted, "tp": tp_price, "deviation": 10,
-        "magic": MAGIC_NUMBER, "comment": f"ML Bot {action}",
-        "type_time": mt5.ORDER_TIME_GTC, "type_filling": mt5.ORDER_FILLING_IOC,
-    }
-    result = mt5.order_send(request)
-    if result.retcode != mt5.TRADE_RETCODE_DONE:
-        print(f"order_send gagal, retcode={result.retcode}, {result.comment}")
-    else:
-        print(f"Order {action} {lot:.2f} {SYMBOL} berhasil dibuka pada harga {price:.5f} (SL disesuaikan untuk spread)")
-
-def get_open_positions():
-    return mt5.positions_get(symbol=SYMBOL, magic=MAGIC_NUMBER)
-
-def close_all_positions():
-    open_positions = get_open_positions()
-    for pos in open_positions:
-        symbol = pos.symbol
-        order_type = mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY
-        price = mt5.symbol_info_tick(symbol).bid if pos.type == mt5.POSITION_TYPE_BUY else mt5.symbol_info_tick(symbol).ask
-        request = {
-            "action": mt5.TRADE_ACTION_DEAL, "symbol": symbol, "volume": pos.volume,
-            "type": order_type, "position": pos.ticket, "price": price,
-            "deviation": 10, "magic": MAGIC_NUMBER, "comment": "Bot close trade",
-            "type_time": mt5.ORDER_TIME_GTC, "type_filling": mt5.ORDER_FILLING_IOC,
-        }
-        mt5.order_send(request)
-
-# --- PERUBAHAN: FUNGSI WAKTU TRADING YANG DIPERBARUI ---
-def is_trading_time():
-    """Memeriksa apakah saat ini berada dalam jam trading umum dan sesi trading yang diizinkan."""
-    now_wib = datetime.now(pytz.timezone("Asia/Jakarta")).time()
+    x = df_features[feature_cols].iloc[-1:].values
+    buy_p = buy_model.predict_proba(x)[0][1]
+    sell_p = sell_model.predict_proba(x)[0][1]
     
-    # Cek jam trading umum
-    in_general_time = TRADING_START_TIME <= now_wib <= TRADING_END_TIME
-    
-    # Cek sesi trading spesifik
-    in_session_time = TRADING_SESSION_START_TIME <= now_wib <= TRADING_SESSION_END_TIME
-    
-    if not in_general_time:
-        print("Di luar jam trading umum (05:00 - 23:59 WIB). Menunggu...")
-        return False
-        
-    if not in_session_time:
-        print(f"Di luar jam sesi trading ({TRADING_SESSION_START_TIME.strftime('%H:%M')} - {TRADING_SESSION_END_TIME.strftime('%H:%M')} WIB). Menunggu...")
-        return False
-        
-    return True
+    print(f"CONF → BUY {buy_p:.2%} | SELL {sell_p:.2%}")
 
-def is_spread_normal():
-    symbol_info = mt5.symbol_info(SYMBOL)
-    if not symbol_info: return False
-    
-    tick = mt5.symbol_info_tick(SYMBOL)
-    current_spread_points = tick.ask - tick.bid
-    average_spread_points = symbol_info.spread * symbol_info.point
-    
-    if current_spread_points > (average_spread_points * MAX_SPREAD_MULTIPLIER):
-        print(f"SPREAD TERLALU LEBAR: Current={current_spread_points/ symbol_info.point:.1f}, Avg={average_spread_points/ symbol_info.point:.1f}. Trade dibatalkan.")
-        return False
-        
-    return True
-
-def check_all_safeguards(state, account_info):
-    if account_info:
-        peak_balance = max(account_info.balance, state.initial_balance)
-        current_drawdown = (peak_balance - account_info.balance) / peak_balance * 100
-        if current_drawdown >= MAX_DRAWDOWN_PERCENT:
-            print(f"STOP TOTAL: Max Drawdown tercapai ({current_drawdown:.2f}% >= {MAX_DRAWDOWN_PERCENT}%)")
-            return False
-
-    if (state.daily_pnl / state.initial_balance * 100) <= -MAX_DAILY_LOSS_PERCENT:
-        print(f"STOP HARI INI: Max Daily Loss tercapai ({state.daily_pnl:.2f})")
-        return False
-
-    if state.consecutive_losses >= MAX_CONSECUTIVE_LOSSES:
-        print(f"STOP HARI INI: Max Consecutive Losses tercapai ({state.consecutive_losses})")
-        return False
-
-    if state.trades_today >= MAX_TRADES_PER_DAY:
-        print(f"STOP HARI INI: Max Trades per Day tercapai ({state.trades_today})")
-        return False
-
-    if not is_spread_normal():
-        return False
-
-    return True
-
-# --- PERUBAHAN: FUNGSI PREDIKSI DENGAN FILTER KEPERCAYAAN ---
-def predict_signal(models, feature_columns):
-    df = get_candles(SYMBOL, TIMEFRAME, 100)
-    if df is None or len(df) < 50:
-        return None
-        
-    df_features = add_features(df)
-    latest_features = df_features[feature_columns].iloc[-1:].values
-
-    buy_model, sell_model = models
-    
-    # Gunakan predict_proba untuk mendapatkan probabilitas
-    buy_proba = buy_model.predict_proba(latest_features)[0]
-    sell_proba = sell_model.predict_proba(latest_features)[0]
-    
-    # Probabilitas untuk kelas '1' (sinyal) ada di index ke-1
-    buy_confidence = buy_proba[1]
-    sell_confidence = sell_proba[1]
-    
-    print(f"Kepercayaan Model: BUY={buy_confidence:.2%}, SELL={sell_confidence:.2%}")
-
-    if buy_confidence >= MODEL_CONFIDENCE_THRESHOLD:
-        print(f"Sinyal BUY terdeteksi dan melewati threshold ({MODEL_CONFIDENCE_THRESHOLD:.2%})")
-        return 'BUY'
-    if sell_confidence >= MODEL_CONFIDENCE_THRESHOLD:
-        print(f"Sinyal SELL terdeteksi dan melewati threshold ({MODEL_CONFIDENCE_THRESHOLD:.2%})")
-        return 'SELL'
-        
-    print(f"Tidak ada sinyal yang melewati threshold kepercayaan.")
+    if buy_p >= MODEL_CONFIDENCE_THRESHOLD: return "BUY"
+    if sell_p >= MODEL_CONFIDENCE_THRESHOLD: return "SELL"
     return None
 
-# --- FUNGSI UTAMA ---
-def main():
-    if not connect_mt5():
+def place_order(signal, atr):
+    tick = mt5.symbol_info_tick(SYMBOL)
+    sym = mt5.symbol_info(SYMBOL)
+    if not tick or not sym: return None
+
+    price = tick.ask if signal == "BUY" else tick.bid
+    sl = price - atr * RISK_MULTIPLIER if signal == "BUY" else price + atr * RISK_MULTIPLIER
+    tp = price + atr * REWARD_MULTIPLIER if signal == "BUY" else price - atr * REWARD_MULTIPLIER
+
+    lot = calculate_lot(price, sl)
+    if lot is None: return None
+
+    request = {
+        'action': mt5.TRADE_ACTION_DEAL, 'symbol': SYMBOL, 'volume': lot,
+        'type': mt5.ORDER_TYPE_BUY if signal == "BUY" else mt5.ORDER_TYPE_SELL,
+        'price': price, 'sl': sl, 'tp': tp, 'deviation': 10,
+        'magic': MAGIC_NUMBER, 'comment': 'ML Bot',
+        'type_filling': sym.filling_mode,
+    }
+    result = mt5.order_send(request)
+    if result.retcode == mt5.TRADE_RETCODE_DONE:
+        logging.info(f"Order {signal} {lot:.2f} {SYMBOL} berhasil @ {price:.5f}")
+        return result.order
+    else:
+        logging.error(f"Order gagal: {result.comment}")
+        return None
+
+# --- MONITORING & STATE UPDATE (FIXED) ---
+def monitor_and_close_positions(state):
+    """Monitor posisi, update state, dan tutup jika perlu."""
+    open_positions = mt5.positions_get(symbol=SYMBOL, magic=MAGIC_NUMBER)
+    if not open_positions:
         return
 
-    try:
-        buy_model = joblib.load(MODEL_BUY_FILE)
-        sell_model = joblib.load(MODEL_SELL_FILE)
-        print("Model berhasil dimuat.")
-    except FileNotFoundError:
-        print(f"ERROR: File model tidak ditemukan. Jalankan Fase 2 terlebih dahulu.")
-        mt5.shutdown()
-        return
+    # Untuk sementara, asumsikan hanya satu posisi terbuka
+    pos = open_positions[0]
+    current_tick = mt5.symbol_info_tick(SYMBOL)
+    if not current_tick: return
 
-    feature_columns = buy_model.feature_names_in_
-    state = DailyState()
+    current_price = current_tick.bid if pos.type == mt5.POSITION_TYPE_BUY else current_tick.ask
+    pnl = 0
+    exit_reason = ""
+
+    if pos.type == mt5.POSITION_TYPE_BUY:
+        pnl = (current_price - pos.price_open) / mt5.symbol_info(SYMBOL).point
+        if current_price <= pos.sl or current_price >= pos.tp:
+            exit_reason = "SL" if current_price <= pos.sl else "TP"
+    else:
+        pnl = (pos.price_open - current_price) / mt5.symbol_info(SYMBOL).point
+        if current_price >= pos.sl or current_price <= pos.tp:
+            exit_reason = "SL" if current_price >= pos.sl else "TP"
+
+    now = datetime.now(TIMEZONE)
+    if not exit_reason and now.time() >= MIDNIGHT_CLOSE.time():
+        exit_reason = "MIDNIGHT CLOSE"
     
+    if exit_reason:
+        # Tutup posisi
+        close_req = {
+            'action': mt5.TRADE_ACTION_DEAL, 'symbol': pos.symbol,
+            'position': pos.ticket, 'volume': pos.volume,
+            'type': mt5.ORDER_TYPE_SELL if pos.type == mt5.POSITION_TYPE_BUY else mt5.ORDER_TYPE_BUY,
+            'price': current_price, 'deviation': 10, 'magic': MAGIC_NUMBER,
+            'comment': f'Bot close ({exit_reason})', 'type_filling': mt5.symbol_info(SYMBOL).filling_mode
+        }
+        mt5.order_send(close_req)
+        logging.info(f"Posisi {pos.ticket} ditutup. Alasan: {exit_reason}. PnL: {pnl:.2f}")
+        
+        # PERBAIKAN: Update state yang dilewatkan sebagai argumen
+        state.update(pnl)
+        logging.info(f"Daily PnL updated: {state.daily_pnl:.2f}")
+
+
+# --- MAIN LOOP (FIXED) ---
+def main():
+    if not connect_mt5(): return
+
+    init_journal()
+    buy_model = joblib.load(MODEL_BUY_FILE)
+    sell_model = joblib.load(MODEL_SELL_FILE)
+    feature_cols = buy_model.feature_names_in_
+    
+    # PERBAIKAN 1: Hanya ada SATU state object yang digunakan di seluruh bot
+    state = DailyState()
+
+    while True:
+        now = datetime.now(TIMEZONE)
+        if now.date() != state.date:
+            state.reset()
+
+        # PERBAIKAN 2: Monitor dipanggil di SETIAP awal loop, tanpa syarat
+        monitor_and_close_positions(state)
+
+        if state.cooldown_active():
+            dt.sleep(60); continue
+
+        if not (TRADING_SESSION_START <= now.time() <= TRADING_SESSION_END):
+            dt.sleep(60); continue
+
+        # PERBAIKAN 2: Cek posisi terbuka SETELAH monitor
+        if mt5.positions_get(symbol=SYMBOL, magic=MAGIC_NUMBER):
+            dt.sleep(60); continue
+
+        if not spread_ok():
+            dt.sleep(60); continue
+
+        signal = predict_signal(buy_model, sell_model, feature_cols)
+        if not signal:
+            dt.sleep(30); continue
+
+        df_atr = add_features(get_candles())
+        atr = df_atr[f'ATRr_{ATR_PERIOD}'].iloc[-1]
+        place_order(signal, atr)
+        
+        dt.sleep(10)
+
+if __name__ == '__main__':
     try:
-        while True:
-            now_wib = datetime.now(pytz.timezone("Asia/Jakarta"))
-            print(f"\n--- Cek Pukul {now_wib.strftime('%H:%M:%S')} WIB ---")
-
-            if state.is_new_day():
-                print("Hari baru, mereset state harian.")
-                state.reset()
-
-            if now_wib.time() >= MIDNIGHT_CLOSE_TIME and now_wib.time() < time(0, 1, 0):
-                print("Sekarang pukul 00:00 WIB. Menutup semua posisi...")
-                close_all_positions()
-                dt.sleep(60)
-                continue
-
-            # Fungsi is_trading_time sekarang sudah mencakup filter sesi
-            if not is_trading_time():
-                dt.sleep(60)
-                continue
-
-            if get_open_positions():
-                print("Ada posisi terbuka. Menunggu...")
-                dt.sleep(60)
-                continue
-
-            account_info = get_account_info()
-            if not check_all_safeguards(state, account_info):
-                dt.sleep(60)
-                continue
-
-            print("Aman untuk trading. Melakukan prediksi...")
-            signal = predict_signal((buy_model, sell_model), feature_columns)
-            
-            if signal:
-                print(f"EKSEKUSI SIGNAL: {signal}")
-                tick = mt5.symbol_info_tick(SYMBOL)
-                if not tick: continue
-                
-                current_price = tick.ask if signal == 'BUY' else tick.bid
-                atr = get_candles(SYMBOL, TIMEFRAME, ATR_PERIOD + 2)[f'ATRr_{ATR_PERIOD}'].iloc[-1]
-                
-                if signal == 'BUY':
-                    sl_price = current_price - (RISK_MULTIPLIER * atr)
-                    tp_price = current_price + (REWARD_MULTIPLIER * atr)
-                else: # SELL
-                    sl_price = current_price + (RISK_MULTIPLIER * atr)
-                    tp_price = current_price - (REWARD_MULTIPLIER * atr)
-                
-                place_order(signal, sl_price, tp_price)
-            
-            dt.sleep(10)
-
+        main()
     except KeyboardInterrupt:
-        print("\nBot dihentikan oleh pengguna.")
+        logging.info("Bot dihentikan oleh pengguna.")
     finally:
         mt5.shutdown()
-        print("Koneksi ke MetaTrader 5 ditutup.")
-
-if __name__ == "__main__":
-    main()
+        logging.info("Koneksi MT5 ditutup.")

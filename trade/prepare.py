@@ -70,42 +70,46 @@ def add_features(df):
     return df
 
 def create_labels(df):
-    """Membuat label target (buy_signal, sell_signal) berdasarkan RR 1:2 di masa depan."""
-    print("Membuat label target...")
+    """
+    Membuat label target dengan memperhitungkan batas waktu tutup posisi tengah malam.
+    Ini lebih realistis dengan aturan trading live kita.
+    """
+    print("Membuat label target (versi realistis dengan batas waktu)...")
     
-    # Inisialisasi kolom label dengan 0
     df['buy_signal'] = 0
     df['sell_signal'] = 0
     
-    # Iterasi melalui setiap candle untuk membuat label
-    # Kita mulai dari awal dan berhenti sebelum akhir agar ada 'masa depan' yang diperiksa
-    for i in range(len(df) - LOOK_FORWARD_WINDOW):
+    # Iterasi melalui setiap candle kecuali yang terakhir
+    for i in range(len(df) - 1):
         
         # --- Data untuk candle saat ini (i) ---
+        current_candle_time = df.index[i]
         current_close = df['close'].iloc[i]
-        current_atr = df[f'ATRr_{ATR_PERIOD}'].iloc[i] # pandas-ta menggunakan ATRr (percent)
+        current_atr = df[f'ATRr_{ATR_PERIOD}'].iloc[i]
         
-        # Jika ATR adalah 0, lewati untuk menghindari pembagian dengan nol
         if current_atr == 0:
             continue
             
-        # --- Hitung level TP dan SL untuk BUY ---
+        # --- Hitung level TP dan SL ---
         buy_sl = current_close - (RISK_MULTIPLIER * current_atr)
         buy_tp = current_close + (REWARD_MULTIPLIER * current_atr)
-        
-        # --- Hitung level TP dan SL untuk SELL ---
         sell_sl = current_close + (RISK_MULTIPLIER * current_atr)
         sell_tp = current_close - (REWARD_MULTIPLIER * current_atr)
         
-        # --- Lihat ke masa depan ---
-        future_df = df.iloc[i+1 : i+1+LOOK_FORWARD_WINDOW]
+        # --- Tentukan batas waktu: tengah malam hari berikutnya ---
+        end_of_day_time = (current_candle_time + pd.Timedelta(days=1)).replace(hour=0, minute=0, second=0)
         
+        # --- Ambil data "masa depan" hanya sampai tengah malam ---
+        future_df = df.loc[current_candle_time:end_of_day_time].iloc[1:] # Mulai dari candle berikutnya
+        
+        if future_df.empty:
+            continue
+            
         # --- Logika untuk BUY SIGNAL ---
-        # Cari candle pertama di masa depan yang menyentuh TP atau SL
         buy_tp_hit_index = future_df[future_df['high'] >= buy_tp].first_valid_index()
         buy_sl_hit_index = future_df[future_df['low'] <= buy_sl].first_valid_index()
         
-        # Jika TP tercapai dan (SL tidak tercapai ATAU TP tercapai lebih dulu)
+        # Cek apakah TP tercapai SEBELUM SL dan SEBELUM tengah malam
         if buy_tp_hit_index is not None and (buy_sl_hit_index is None or buy_tp_hit_index < buy_sl_hit_index):
             df.loc[df.index[i], 'buy_signal'] = 1
             
@@ -113,11 +117,11 @@ def create_labels(df):
         sell_tp_hit_index = future_df[future_df['low'] <= sell_tp].first_valid_index()
         sell_sl_hit_index = future_df[future_df['high'] >= sell_sl].first_valid_index()
         
-        # Jika TP tercapai dan (SL tidak tercapai ATAU TP tercapai lebih dulu)
+        # Cek apakah TP tercapai SEBELUM SL dan SEBELUM tengah malam
         if sell_tp_hit_index is not None and (sell_sl_hit_index is None or sell_tp_hit_index < sell_sl_hit_index):
             df.loc[df.index[i], 'sell_signal'] = 1
             
-    print("Label berhasil dibuat.")
+    print("Label berhasil dibuat dengan memperhitungkan batas waktu.")
     return df
 
 # --- EKSEKUSI UTAMA ---
